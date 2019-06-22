@@ -8,6 +8,29 @@ def sqr(x):
     return x*x
 
 
+def break_comma(exp: str):
+    """
+    Делит выражение на запятые, если они не лежат внутри внутренней скобочной последовательности.
+    Если скобочная последовательность завершена и запятая находится после/до неё, то выражение
+    обрезается и добавляется внутрь.
+    """
+    count_bracket = 0
+    last_ind = 0
+    expressions = []
+    for ind, elem in enumerate(exp):
+        if elem == "(":
+            count_bracket += 1
+        elif elem == ")":
+            count_bracket -= 1
+        if elem == "," and count_bracket == 0:
+
+            expressions.append(exp[last_ind: ind])
+            last_ind = ind + 1
+    expressions.append(exp[last_ind:])
+    return expressions
+
+
+
 def do_func(exp: float, func_name: str, args: list):
     """
     применяет функцию func_name к указанному выражению exp, используя аргументы args
@@ -73,9 +96,13 @@ def get_bracket(exp: str):
             # индекс последней скобки, конец выполнения кода в этом условии
             if func:
                 # если скобки были функцией, то разделяются все её аргументы в func_elems
-                func_elems = exp[first_ind+1:last_ind].split(",")
+                exp_without_brackets = exp[first_ind+1:last_ind]
+                # выделение выражения из скобок, без их самих
+                func_elems = break_comma(exp_without_brackets)
+                # делит выражение на массив, разделителем является запятая
+                # не делит, если выражение внутри скобок
                 if len(func_elems) > 1:
-                    ind_del = exp[first_ind+1:last_ind].index(",")+first_ind+1
+                    ind_del = len(func_elems[0])
                     # если аргументов больше, чем один, то ind_del  является первым вхождением запятой
                     # разделяющей первый и последующие аргументы. Она будет представлена как последний
                     # индекс, таким образом остаётся в диапозоне только он.
@@ -84,7 +111,7 @@ def get_bracket(exp: str):
                     # смещения первого индекса среза строки, находящейся справа от
                     # выражения. Цифровое значение этого смещения представлено в
                     # качестве четвёртого возвращаемого элемента.
-                    return first_ind, ind_del, (func, func_elems[1:]), last_ind - ind_del
+                    return first_ind, ind_del + len(func) + 1, (func, func_elems[1:]), last_ind - ind_del
             # в качестве индексов идут первое и последнее вхождение скобки
             # в качестве func - название функции, None - единственный аргумент функции
             # 0 - отсутствие смещения, т.к. аргумент всего один
@@ -219,4 +246,3 @@ while True:
     expression_without_spaces = remove_spaces(expression)
     answer = work(expression_without_spaces)
     print(answer)
-
