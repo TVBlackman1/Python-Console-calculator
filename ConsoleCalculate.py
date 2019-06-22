@@ -1,12 +1,47 @@
 # Python version: 3.7
 
-
+import sys
 import math
 
+
+sys.stdin = open("inputs.txt")
 
 SHOW_ACTIONS = False  # Поставить True, если нужно проследить по действиям, что делает программа.
 actions = 1  # Показывает нумерацию действий, если включено SHOW_ACTIONS
 
+
+inf = 512
+
+
+def elective_work(elem):
+    try:
+        elem = work(elem)
+        return elem
+    except:
+        return elem
+
+
+def elective_float(elem):
+    try:
+        elem = float(elem)
+        return elem
+    except:
+        return elem
+
+
+def sgm(exp: str, variable: str, start: float, end: float):
+    sum_ = 0
+    for i in range(round(start), round(end)+1):
+        exp_without_var = exp.replace(variable, str(i))
+        sum_ += float(work(exp_without_var))
+    return sum_
+
+
+def mul(*args):
+    m = 1
+    for i in args:
+        m *= i
+    return m
 
 def sqr(x):
     return x*x
@@ -44,16 +79,15 @@ def do_func(exp: float, func_name: str, args: list):
     if args is not None:
         # упрощение и преобразование в числовой формат сторонних аргументов функции
 
-        args = list(map(work, args))
+        args = list(map(elective_work, args))
         args_str = args  # for SHOW_ACTIONS
-        args = list(map(float, args))
+        args = list(map(elective_float, args))
         ret = functions[func_name](exp, *args)
 
         if SHOW_ACTIONS:
             global actions
-            print(f"{actions}) {func_name}({exp},{', '.join(args_str)}) = {ret}")
+            print(f"{actions}) {func_name}({exp}, {', '.join(args_str)}) = {ret}")
             actions += 1
-
 
         return ret
     else:
@@ -152,6 +186,7 @@ def processing_plus_minus(exp: str) -> str:
     """
     elems_split = ["-", "+"]
     elems_split_mul = ["/", "*", "х", ":"]
+    split_e = "e"  # для очень маленький или больших чисел. Например, 1.0002700486072909e-15
     func = {"-": float.__sub__, "+": float.__add__}
     groups = []
     signs = []
@@ -163,7 +198,7 @@ def processing_plus_minus(exp: str) -> str:
     for ind, elem in enumerate(exp):
         # разделение на слагаемые
         if elem in elems_split and exp[ind-1] not in elems_split_mul \
-                and exp[ind-1] not in elems_split:
+                and exp[ind-1] not in elems_split and exp[ind-1] != split_e:
             groups.append(exp[last_ind+1:ind])
             signs.append(elem)
             last_ind = ind
@@ -196,6 +231,11 @@ def processing_mul_div(exp: str) -> float:
     """
     выполняет произведение элементов, находящихся в выражении
     """
+
+    if exp == "inf":
+        return inf
+
+
     elems_split = ["/", "*", "х", ":"]
     func = {"/": div, ":": div, "*": float.__mul__, "х": float.__mul__}
     groups = []
@@ -252,7 +292,10 @@ def work(exp: str) -> str:
                     func_second_arg = brackets[2][1]  # вторичные аргументы функции, если они есть
                 else:
                     func_second_arg = None  # отсутствие вторичных аргументов
-                exp = exp[:first_bracket-len(func)] + str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
+                if func == "sgm":
+                    exp = exp[:first_bracket-len(func)] + str(do_func(exp[first_bracket+1:second_bracket], func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
+                else:
+                    exp = exp[:first_bracket-len(func)] + str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
                 # всё выражение до функции и после неё остаётся неизменным
                 # сама функция будет высчитываться рекурсивно.
 
@@ -278,13 +321,22 @@ functions = {
     "tan": math.tan,
     "log": math.log,
     "pow": math.pow,
-    "sqr": sqr
+    "sqr": sqr,
+    "sgm": sgm,
+    "mul": mul
 }
 
 
 while True:
-    expression = input()
-    expression_without_spaces = remove_spaces(expression)
-    answer = work(expression_without_spaces)
+    try:
+        expression = input()
+        print(expression, "= ?")
+        expression_without_spaces = remove_spaces(expression)
+        answer = work(expression_without_spaces)
 
-    print(answer)
+        actions = 1
+        print("Answer:", answer)
+        print()
+    except:
+        break
+print("End.")
