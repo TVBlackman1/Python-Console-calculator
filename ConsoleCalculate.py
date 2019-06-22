@@ -4,6 +4,10 @@
 import math
 
 
+SHOW_ACTIONS = False  # Поставить True, если нужно проследить по действиям, что делает программа.
+actions = 1  # Показывает нумерацию действий, если включено SHOW_ACTIONS
+
+
 def sqr(x):
     return x*x
 
@@ -14,6 +18,7 @@ def break_comma(exp: str):
     Если скобочная последовательность завершена и запятая находится после/до неё, то выражение
     обрезается и добавляется внутрь.
     """
+
     count_bracket = 0
     last_ind = 0
     expressions = []
@@ -35,13 +40,30 @@ def do_func(exp: float, func_name: str, args: list):
     """
     применяет функцию func_name к указанному выражению exp, используя аргументы args
     """
+
     if args is not None:
         # упрощение и преобразование в числовой формат сторонних аргументов функции
+
         args = list(map(work, args))
+        args_str = args  # for SHOW_ACTIONS
         args = list(map(float, args))
-        return functions[func_name](exp, *args)
+        ret = functions[func_name](exp, *args)
+
+        if SHOW_ACTIONS:
+            global actions
+            print(f"{actions}) {func_name}({exp},{', '.join(args_str)}) = {ret}")
+            actions += 1
+
+
+        return ret
     else:
-        return functions[func_name](exp)
+        ret = functions[func_name](exp)
+
+        if SHOW_ACTIONS:
+            print(f"{actions}) {func_name}({exp}) = {ret}")
+            actions += 1
+
+        return ret
 
 
 def remove_spaces(exp: str):
@@ -111,7 +133,7 @@ def get_bracket(exp: str):
                     # смещения первого индекса среза строки, находящейся справа от
                     # выражения. Цифровое значение этого смещения представлено в
                     # качестве четвёртого возвращаемого элемента.
-                    return first_ind, ind_del + len(func) + 1, (func, func_elems[1:]), last_ind - ind_del
+                    return first_ind, first_ind + ind_del + 1, (func, func_elems[1:]), last_ind - ind_del
             # в качестве индексов идут первое и последнее вхождение скобки
             # в качестве func - название функции, None - единственный аргумент функции
             # 0 - отсутствие смещения, т.к. аргумент всего один
@@ -133,7 +155,6 @@ def processing_plus_minus(exp: str) -> str:
     func = {"-": float.__sub__, "+": float.__add__}
     groups = []
     signs = []
-
     if exp[0] in elems_split:
         # необходимо для того, чтобы программа не вычитали значение из ничего, добавляет 0
         exp = "0"+exp
@@ -154,9 +175,19 @@ def processing_plus_minus(exp: str) -> str:
         groups.append(exp[last_ind + 1:])
 
     for i in signs:
+        tmp1 = processing_mul_div(groups[0])
+        tmp2 = processing_mul_div(groups[1])
+
         # выполняет по очереди действия для каждого из слагаемого,
         # заранее посчитав каждый из них в processing_mul_div
-        groups[0] = str(func[i](processing_mul_div(groups[0]), processing_mul_div(groups[1])))
+        groups[0] = str(func[i](tmp1, tmp2))
+
+        if SHOW_ACTIONS:
+            global actions
+            print(f"{actions}) {tmp1} {i} {tmp2} = {groups[0]}")
+            actions += 1
+
+
         del groups[1]
     return groups[0]
 
@@ -184,9 +215,19 @@ def processing_mul_div(exp: str) -> float:
         groups.append(exp[last_ind + 1:])
         # добавляет последний множитель
     for i in signs:
+
+        tmp1 = float(groups[0])
+        tmp2 = float(groups[1])
         # считает произведение, деление
-        groups[0] = func[i](float(groups[0]), float(groups[1]))
+        groups[0] = func[i](tmp1, tmp2)
+
+        if SHOW_ACTIONS:
+            global actions
+            print(f"{actions}) {tmp1} {i} {tmp2} = {groups[0]}")
+            actions += 1
+
         del groups[1]
+
     return groups[0]
 
 
@@ -245,4 +286,5 @@ while True:
     expression = input()
     expression_without_spaces = remove_spaces(expression)
     answer = work(expression_without_spaces)
+
     print(answer)
