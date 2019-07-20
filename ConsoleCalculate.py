@@ -1,12 +1,9 @@
 # Python version: 3.7
 
-import sys
 import math
 
 
-sys.stdin = open("inputs.txt")
-
-SHOW_ACTIONS = False  # Поставить True, если нужно проследить по действиям, что делает программа.
+SHOW_ACTIONS = True  # Поставить True, если нужно проследить по действиям, что делает программа.
 actions = 1  # Показывает нумерацию действий, если включено SHOW_ACTIONS
 
 
@@ -30,10 +27,22 @@ def elective_float(elem):
 
 
 def sgm(exp: str, variable: str, start: float, end: float):
+    # exp - выражение
+    # variable - название переменной, использующейся в выражении
+    # start, end - начальные, конечные значения для переменной. Для бесконечности ввести inf
     sum_ = 0
     for i in range(round(start), round(end)+1):
         exp_without_var = exp.replace(variable, str(i))
-        sum_ += float(work(exp_without_var))
+
+        ans = float(work(exp_without_var))
+        sum_before = sum_
+
+        sum_ += ans
+
+        if SHOW_ACTIONS:
+            global actions
+            print(f"{actions}) {sum_before} + {ans} = {sum_}")
+            actions += 1
     return sum_
 
 
@@ -163,15 +172,11 @@ def get_bracket(exp: str):
                     # разделяющей первый и последующие аргументы. Она будет представлена как последний
                     # индекс, таким образом остаётся в диапозоне только он.
                     # название функции и прочие аргументы возвращаются в кортеже третиим элементом.
-                    # Все символы после первого аргумента удаляются из выражения, путём
-                    # смещения первого индекса среза строки, находящейся справа от
-                    # выражения. Цифровое значение этого смещения представлено в
-                    # качестве четвёртого возвращаемого элемента.
-                    return first_ind, first_ind + ind_del + 1, (func, func_elems[1:]), last_ind - ind_del
+                    return first_ind, first_ind + ind_del + 1, (func, func_elems[1:]), last_ind
             # в качестве индексов идут первое и последнее вхождение скобки
             # в качестве func - название функции, None - единственный аргумент функции
             # 0 - отсутствие смещения, т.к. аргумент всего один
-            return first_ind, last_ind, (func, None), 0
+            return first_ind, last_ind, (func, None), last_ind
     return
     # возвращает None, если скобки в выражении не обнаружены
 
@@ -293,9 +298,14 @@ def work(exp: str) -> str:
                 else:
                     func_second_arg = None  # отсутствие вторичных аргументов
                 if func == "sgm":
-                    exp = exp[:first_bracket-len(func)] + str(do_func(exp[first_bracket+1:second_bracket], func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
+                    #  отдельное условие, т.к. не надо обрабатывать внутренности с помощью work из-за присутствия букв
+                    exp = exp[:first_bracket-len(func)] + \
+                          str(do_func(exp[first_bracket+1:second_bracket], func, func_second_arg)) + \
+                          exp[func_last_ind + 1:]
                 else:
-                    exp = exp[:first_bracket-len(func)] + str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
+                    exp = exp[:first_bracket-len(func)] + \
+                          str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + \
+                          exp[func_last_ind + 1:]
                 # всё выражение до функции и после неё остаётся неизменным
                 # сама функция будет высчитываться рекурсивно.
 
@@ -330,12 +340,19 @@ functions = {
 while True:
     try:
         expression = input()
-        print(expression, "= ?")
+
+        if SHOW_ACTIONS:
+            print(expression, "= ?")
+
         expression_without_spaces = remove_spaces(expression)
         answer = work(expression_without_spaces)
 
         actions = 1
-        print("Answer:", answer)
+
+        if SHOW_ACTIONS:
+            print("Answer:", answer)
+        else:
+            print(answer)
         print()
     except:
         break
