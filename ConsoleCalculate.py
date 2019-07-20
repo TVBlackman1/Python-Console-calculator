@@ -129,15 +129,11 @@ def get_bracket(exp: str):
                     # разделяющей первый и последующие аргументы. Она будет представлена как последний
                     # индекс, таким образом остаётся в диапозоне только он.
                     # название функции и прочие аргументы возвращаются в кортеже третиим элементом.
-                    # Все символы после первого аргумента удаляются из выражения, путём
-                    # смещения первого индекса среза строки, находящейся справа от
-                    # выражения. Цифровое значение этого смещения представлено в
-                    # качестве четвёртого возвращаемого элемента.
-                    return first_ind, first_ind + ind_del + 1, (func, func_elems[1:]), last_ind - ind_del
+                    return first_ind, first_ind + ind_del + 1, (func, func_elems[1:]), last_ind
             # в качестве индексов идут первое и последнее вхождение скобки
             # в качестве func - название функции, None - единственный аргумент функции
-            # 0 - отсутствие смещения, т.к. аргумент всего один
-            return first_ind, last_ind, (func, None), 0
+            # last_ind - отсутствие смещения, т.к. аргумент всего один
+            return first_ind, last_ind, (func, None), last_ind
     return
     # возвращает None, если скобки в выражении не обнаружены
 
@@ -163,7 +159,9 @@ def processing_plus_minus(exp: str) -> str:
     for ind, elem in enumerate(exp):
         # разделение на слагаемые
         if elem in elems_split and exp[ind-1] not in elems_split_mul \
-                and exp[ind-1] not in elems_split:
+                and exp[ind-1] not in elems_split and exp[ind-1] != "e":
+            # не разделяет, если число нужно отрицательное при сложении с ним или при умножениии на него
+            # или если есть e для малых чисел
             groups.append(exp[last_ind+1:ind])
             signs.append(elem)
             last_ind = ind
@@ -252,7 +250,11 @@ def work(exp: str) -> str:
                     func_second_arg = brackets[2][1]  # вторичные аргументы функции, если они есть
                 else:
                     func_second_arg = None  # отсутствие вторичных аргументов
-                exp = exp[:first_bracket-len(func)] + str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + exp[second_bracket+1+func_last_ind:]
+
+                exp = exp[:first_bracket-len(func)] + \
+                      str(do_func(float(work(exp[first_bracket+1:second_bracket])), func, func_second_arg)) + \
+                      exp[func_last_ind+1:]\
+
                 # всё выражение до функции и после неё остаётся неизменным
                 # сама функция будет высчитываться рекурсивно.
 
