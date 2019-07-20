@@ -7,6 +7,8 @@ class Calculator:
 
     def __init__(self, other_func: dict = None, inf=512):
         self.__inf = inf
+
+        # length of names is 3! It`s necessary
         self.__functions = {
             "cos": math.cos,
             "sin": math.sin,
